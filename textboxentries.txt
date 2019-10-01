@@ -1,0 +1,25 @@
+UserId,UserId,number
+BagId,BagId,number
+Date,Date,date
+SessionId,SessionId,number
+TimeZone (/SessionLocalTime),TimeZone,number
+Passengers,Passengers,number
+Tier,Tier,number
+Day,Day,number
+DayId,DayId,number
+Device,DeviceName,text
+System Name (Platform),SystemName,text
+System Version,SystemVersion,text
+AirMarshall Trial,AirMarshalls,radio
+IsChallenge,IsChallenge,radio
+Suspected,Suspected,radio
+Lost Data,LostDataSincePreviousSession,radio
+Illegal Items (# of items in bag),IllegalItems,hybrid
+Rare Items (# of items in bag),RareItems,hybrid
+Legal Items (# of items in bag),LegalItems,hybrid
+Time in scanner (>/</= or equal to certain value),TimeInScanner,hybrid
+Unique Taps (>/</= to certain value),UniqueTaps,hybrid
+Score (>/</= to certain value),Score,hybrid
+First legal item tap time (>/</= to certain value),FirstLegalTapTime,hybrid
+Session Length (>/</= to certain value),SessionLength,hybrid
+Security Breaches (>/</= to certain value),SecurityBreaches,hybrid

@@ -1,0 +1,276 @@
+<!--
+
+Data Exporter Front End
+
+Created July 18th, 2018
+
+@author: Jasen
+
+Purpose: provide researchers with an easy way to query data from the database
+
+TODO:
+- create checkbox lists for all the header categories
+- allow users to specify how exactly how many targets they're looking for
+	- allow users to specify DayId, SubjectId, SessionId, etc.; anything that won't use a checkbox list
+- figure out how to process HTML commands 
+- figure out how to export results as a CSV
+
+PROBLEMS:
+- how would we search for the presence of multiple legal/illegal items? they're divided up into columns (e.g. LegalItem1,LegalItem2)
+
+NEED TO KNOW:
+- what are categories in which you can have more than one thing selected? for example, you won't be able to find columns with more than one airport selected, but you can find columns with more than one legal item
+- What's the difference between Level and Passenger Type? Only passenger type seems to include "IMPOSSIBLE" but the Level column in the data includes impossible too
+
+
+IMPORTANT
+- sections where you could potentially provide your own input (i.e. UserID can be specified via textbox)
+	- UserId
+	- BagId
+	- Date
+	- SessionLength (greater/less than or equal to certain value)
+	- SessionId
+	- TimeZone (/SessionLocalTime)
+	- Passengers
+	- Tier
+	- Day
+	- DayId
+	- Device
+	- System Name (Platform)
+	- System Version
+	- Illegal Items (# of items)
+	- Rare Items (# of items)
+	- Legal Items (# of items)
+	- Time in scanner (greater/less than or equal to certain value)
+	- Unique Taps (greater/less than or equal to certain value)
+	- Score (greater/less than or equal to certain value)
+	- FirstLegalTapTime (greater/less than or equal to certain value)
+
+- Yes/No sections
+	- AirMarshall Trial
+	- IsChallenge
+	- Suspected
+	- LostData
+
+
+-->
+
+<html>
+	<title> BLAHTEST </title>
+	<head>
+		<script>
+
+			function loadAll(){
+				var xmlhttp = new XMLHttpRequest();
+				xmlhttp.open("GET","./outfile.txt?t=" + Math.random(),false); //the ?t= Math.random() is so that the browser stops loading a cached version of the file
+				xmlhttp.send();
+				checkboxData = xmlhttp.responseText;
+
+				xmlhttp = new XMLHttpRequest();
+				xmlhttp.open("GET","./textboxentries.txt?t=" + Math.random(),false);
+				xmlhttp.send();
+				textboxData = xmlhttp.responseText;
+
+				//document.getElementById("resultDiv").innerHTML = xmlhttp.responseText;
+				createSections(textboxData,checkboxData);
+			}
+
+			function checkAll(section){
+				var sectionElements = document.getElementById(section + "_div").childNodes;
+
+				for(var i=0;i<sectionElements.length;i++){
+					if(sectionElements[i].type == "checkbox"){
+						var checkbox = sectionElements[i];
+						checkbox.checked = document.getElementById(section + "_allbutton").innerHTML == "All" ? true : false;
+					}
+				}
+				document.getElementById(section + "_allbutton").innerHTML = document.getElementById(section + "_allbutton").innerHTML == "All" ? "None" : "All"; 
+			}
+
+			function createSections(textboxData,checkboxData){
+
+				var totalForm = document.createElement("form");
+				totalForm.setAttribute("id","form_total");
+				totalForm.setAttribute("action","./process.php");
+				totalForm.setAttribute("method","post");
+				var sections = checkboxData.split("\n");
+				var textboxes = textboxData.split("\n");
+				var allInterestPoints = [];
+
+				for(var textboxIndex = 0; textboxIndex < textboxes.length; textboxIndex++){
+
+					var textboxName = textboxes[textboxIndex].split(",")[0];
+					var textboxColumn = textboxes[textboxIndex].split(",")[1];
+					var textboxType = textboxes[textboxIndex].split(",")[2];
+
+					var textboxDiv = document.createElement("div");
+					textboxDiv.setAttribute("id", textboxName + "_div");
+
+					var textboxHeader = document.createElement("h4");
+					textboxHeader.setAttribute("id", textboxName + "_header");
+					allInterestPoints.push(textboxName + "_header");
+					textboxHeader.appendChild(document.createTextNode(textboxName));
+					
+					textboxDiv.appendChild(textboxHeader);
+					totalForm.appendChild(textboxDiv);
+					
+					var textbox = document.createElement("input");
+					textbox.setAttribute("name",textboxColumn);
+					textbox.setAttribute("id",textboxName);
+					textboxDiv.appendChild(textbox);
+
+					if(textboxType == "hybrid"){
+						textbox.setAttribute("type","number");
+						textbox.setAttribute("name",textboxColumn + "_hybrid");
+
+						var greaterThan = document.createElement("input");
+						var lessThan = document.createElement("input");
+						var equalTo = document.createElement("input");
+
+						textboxDiv.appendChild(document.createElement("br"));
+
+						textboxDiv.appendChild(greaterThan);
+						textboxDiv.appendChild(document.createTextNode(" target > specified value"));
+						textboxDiv.appendChild(document.createElement("br"));
+						textboxDiv.appendChild(lessThan);						
+						textboxDiv.appendChild(document.createTextNode(" target < specified value"));
+						textboxDiv.appendChild(document.createElement("br"));
+						textboxDiv.appendChild(equalTo);
+						textboxDiv.appendChild(document.createTextNode(" target = specified value"));		
+
+						greaterThan.setAttribute("id",textboxName + "_radio_greater");
+						greaterThan.setAttribute("type","radio");
+						greaterThan.setAttribute("name",textboxColumn + "_hybridradio");
+						greaterThan.setAttribute("value",">");
+
+						lessThan.setAttribute("id",textboxName + "_radio_less");
+						lessThan.setAttribute("type","radio");
+						lessThan.setAttribute("name",textboxColumn + "_hybridradio");
+						lessThan.setAttribute("value","<");
+
+						equalTo.setAttribute("id",textboxName + "_radio_equal");
+						equalTo.setAttribute("type","radio");
+						equalTo.setAttribute("name",textboxColumn + "_hybridradio");
+						equalTo.setAttribute("value","=");
+
+					}
+
+					else if(textboxType == "radio"){
+
+						textbox.setAttribute("type","radio");
+						textbox.setAttribute("id",textboxName + "_radio_true");
+						textbox.setAttribute("name",textboxColumn + "_radio");
+						textbox.setAttribute("value",1);
+						textboxDiv.appendChild(document.createTextNode(" True"));
+						textboxDiv.appendChild(document.createElement("br"));
+
+						var absent = document.createElement("input");
+						textboxDiv.appendChild(absent);
+						textboxDiv.appendChild(document.createTextNode(" False"));
+						absent.setAttribute("id",textboxName + "_radio_false");
+						absent.setAttribute("type","radio");
+						absent.setAttribute("name",textboxColumn + "_radio");
+						absent.setAttribute("value",0);
+
+					}
+
+					else textbox.setAttribute("type",textboxType);
+
+				}
+
+
+				//do something for each section
+				for(var sectionIndex = 0; sectionIndex < sections.length; sectionIndex++){
+
+					var sectionName = sections[sectionIndex].split("\t")[0].split(",")[0];
+					var sectionCorrespondingColumn = sections[sectionIndex].split("\t")[0].split(",")[1];
+
+					var sectionDiv = document.createElement("div");
+					sectionDiv.setAttribute("id", sectionName + "_div");
+
+					var sectionHeader = document.createElement("h3");
+					sectionHeader.setAttribute("id", sectionName + "_header");
+					allInterestPoints.push(sectionName + "_header");
+					sectionHeader.appendChild(document.createTextNode(sectionName));
+					sectionDiv.appendChild(sectionHeader);
+					
+					totalForm.appendChild(sectionDiv);
+					document.getElementById("resultDiv").appendChild(totalForm);
+
+
+					//document.getElementById("resultDiv").appendChild(document.createTextNode(sectionIndex + "->" + sectionName + "<br>"));
+					var elements = sections[sectionIndex].split("\t")[1].split(":");
+
+					//do something for each element
+					for(var checkboxIndex = 0; checkboxIndex < elements.length; checkboxIndex++){
+						
+						var elementName = elements[checkboxIndex].split(",")[0];
+						var elementValue = elements[checkboxIndex].split(",")[1];
+
+						var checkbox = document.createElement("input"); 
+						checkbox.setAttribute("type", "checkbox");
+						checkbox.setAttribute("name", sectionCorrespondingColumn + "_" + elementName);
+						checkbox.setAttribute("value", elementValue);
+						checkbox.setAttribute("id", sectionName + "_" + elementName);
+
+						sectionDiv.appendChild(checkbox);
+						sectionDiv.appendChild(document.createTextNode(elementName));
+						sectionDiv.appendChild(document.createElement("br"));
+
+					}
+
+					var checkAllButton = document.createElement("button");
+					checkAllButton.setAttribute("onclick","checkAll('" + sectionName + "')");
+					checkAllButton.setAttribute("type","button");
+					checkAllButton.setAttribute("id", sectionName + "_allbutton");
+					checkAllButton.appendChild(document.createTextNode("All"));
+					sectionDiv.appendChild(checkAllButton);
+
+				}
+		
+				//document.getElementById("resultDiv").appendChild(totalForm);
+				var submitButton = document.createElement("input");
+				submitButton.setAttribute("type","submit");
+				submitButton.setAttribute("value","Submit");
+				submitButton.setAttribute("id","submit_button");
+				totalForm.appendChild(submitButton);
+
+				//create the easy-navigation box
+
+				var navigationPane = document.createElement("div");
+				navigationPane.setAttribute("id","navigationPane");
+				navigationPane.setAttribute("style","position:fixed;bottom:0px;right:10px;border:3px dashed #000000");
+				allInterestPoints.forEach(function(interestPoint){
+					var link = document.createElement("a");
+					link.setAttribute("href","#" + interestPoint);
+					link.appendChild(document.createTextNode(interestPoint.split("_")[0]));
+					navigationPane.appendChild(link);
+					navigationPane.appendChild(document.createElement("br"));
+				});
+				var doneLink = document.createElement("a");
+				doneLink.setAttribute("href","#submit_button");
+				doneLink.appendChild(document.createTextNode("DONE"));
+				navigationPane.appendChild(doneLink);
+				document.body.appendChild(navigationPane);
+
+			}
+
+
+		</script>
+	</head>
+
+	<body>
+		<div id = "top">
+			<script>
+				if(!(window.File && window.FileReader && window.FileList && window.Blob)){
+					alert("The file APIs are not fully supported in this browser.")
+				}
+			</script>
+		</div>
+
+		<button onclick = "loadAll()" id = "btn3"> Load files </button>
+
+		<div id = "resultDiv"> </div>
+		
+	</body>
+</html>
